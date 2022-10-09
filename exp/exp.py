@@ -40,7 +40,7 @@ class Exp:
                                 Normalize(mean=[0.5], std=[0.5])
                             ]))
 
-        self.trainloader = DataLoader(traindataset, batch_size=self.batch_size, shuffle=False)
+        self.trainloader = DataLoader(traindataset, batch_size=self.batch_size, shuffle=True)
         self.testloader = DataLoader(testdataset, batch_size=self.batch_size, shuffle=False)
 
     def _get_model(self):
@@ -104,16 +104,32 @@ class Exp:
 
     def test(self):
         self.model.load_state_dict(torch.load(self.model_dir + 'model.pkl'))
-        samples = self.dm.sample(self.model, image_size=self.image_size, batch_size=8, channels=self.channels)
+        generated_images = self.dm.sample(self.model, image_size=self.image_size, batch_size=64, channels=self.channels)
 
-        for index in range(8):
-            fig = plt.figure()
-            ims = []
-            for i in range(self.timesteps):
-                im = plt.imshow(samples[i][index].reshape(self.image_size, self.image_size, self.channels),
-                                cmap="gray", animated=True)
-                ims.append([im])
+        # generate new images
+        fig = plt.figure(figsize=(12, 12), constrained_layout=True)
+        gs = fig.add_gridspec(8, 8)
 
-            animate = animation.ArtistAnimation(fig, ims, interval=50, blit=True, repeat_delay=1000)
-            animate.save(self.result_dir + 'diffusion model ' + str(index) + '.gif')
-            plt.show()
+        imgs = generated_images[-1].reshape(8, 8, 28, 28)
+        for n_row in range(8):
+            for n_col in range(8):
+                f_ax = fig.add_subplot(gs[n_row, n_col])
+                f_ax.imshow((imgs[n_row, n_col] + 1.0) * 255 / 2, cmap="gray")
+                f_ax.axis("off")
+        fig.savefig(self.result_dir + 'result.png')
+        fig.show()
+
+        # show the denoise steps
+        fig = plt.figure(figsize=(12, 12), constrained_layout=True)
+        gs = fig.add_gridspec(16, 16)
+
+        for n_row in range(16):
+            for n_col in range(16):
+                f_ax = fig.add_subplot(gs[n_row, n_col])
+                t_idx = (self.timesteps // 16) * n_col if n_col < 15 else -1
+                img = generated_images[t_idx][n_row].reshape(28, 28)
+                f_ax.imshow((img + 1.0) * 255 / 2, cmap="gray")
+                f_ax.axis("off")
+
+        fig.savefig(self.result_dir + 'result_step.png')
+        fig.show()
