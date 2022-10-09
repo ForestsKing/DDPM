@@ -3,7 +3,7 @@ from time import time
 
 import torch
 import numpy as np
-from matplotlib import pyplot as plt, animation
+from matplotlib import pyplot as plt
 from torch import optim, nn
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader
